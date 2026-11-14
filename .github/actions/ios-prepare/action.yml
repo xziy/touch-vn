@@ -10,6 +10,12 @@ inputs:
   superizer_ref:
     description: Ref of the library; the commit of the version gradle/libs.versions.toml names
     required: true
+  framework_task:
+    description: >-
+      The link task of the framework the lane's Xcode build will ask for (linkReleaseFrameworkIosArm64,
+      linkDebugFrameworkIosSimulatorArm64); run here, so Xcode's build phase finds it UP-TO-DATE. Empty skips it.
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -34,4 +40,35 @@ runs:
         distribution: temurin
         java-version: '21'
 
+    # setup-gradle writes its cache only on the default branch (main) unless told otherwise, and iOS is
+    # never built on main: ios-device and ios-simulator only read, so every run began with an empty
+    # ~/.gradle. Each lane's branch writes its own entry.
     - uses: gradle/actions/setup-gradle@v4
+      with:
+        cache-read-only: false
+
+    # ~/.konan — the Kotlin/Native compiler, LLVM, the iOS platform klibs — is not in ~/.gradle and was
+    # downloaded by every run. Restored here, saved after the link below (as in Unitool and
+    # agentiz-client): a composite action has no post step.
+    - name: Restore Kotlin/Native toolchain
+      id: konan-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.konan
+        key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
+        restore-keys: |
+          konan-${{ runner.os }}-${{ runner.arch }}-
+
+    # The framework before Xcode: Gradle's output task by task (under xcodebuild it arrives in one piece at
+    # the end), a Kotlin error here and not in the Xcode log, and a warm daemon for the build phase.
+    - name: Link the Kotlin framework
+      if: inputs.framework_task != ''
+      shell: bash
+      run: ./gradlew ":composeApp:${{ inputs.framework_task }}"
+
+    - name: Save Kotlin/Native toolchain
+      if: inputs.framework_task != '' && steps.konan-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.konan
+        key: ${{ steps.konan-cache.outputs.cache-primary-key }}
