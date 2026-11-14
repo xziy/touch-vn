@@ -1,0 +1,37 @@
+# The steps every iOS job starts with: the library next door, a JDK, Gradle. One place, so the
+# lanes in ios.yml cannot drift apart (as in Unitool).
+name: ios-prepare
+description: Check out Superizer beside the repo, set up Java and Gradle
+
+inputs:
+  superizer_repo:
+    description: Repository of the library (SUPERIZER_LOCAL=1 in settings.gradle.kts)
+    required: true
+  superizer_ref:
+    description: Ref of the library; the commit of the version gradle/libs.versions.toml names
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.superizer_repo }}
+        ref: ${{ inputs.superizer_ref }}
+        path: superizer-checkout
+
+    - name: Put the library where settings.gradle.kts looks for it
+      shell: bash
+      run: mv superizer-checkout ../superizer
+
+    # Which Xcode the runner image chose, at the top of the log rather than inferred from it.
+    - name: Xcode
+      shell: bash
+      run: xcodebuild -version && xcrun --sdk iphoneos --show-sdk-version
+
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '21'
+
+    - uses: gradle/actions/setup-gradle@v4

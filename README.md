@@ -49,9 +49,16 @@ Superizer 0.8.2 берётся из `~/.m2` (`./gradlew publishToMavenLocal` в 
 ## iPhone
 
 `iosApp/` — Xcode-проект, `composeApp/src/iosMain` — хост на iOS. Без Mac собираются только klib-и
-(`./gradlew :composeApp:compileKotlinIosArm64`). `.github/workflows/ios.yml` (macos-15) собирает на `main`,
-на `ios-ipa` и вручную и кладёт **неподписанный** `TouchVN-<run>.ipa` в артефакты прогона:
-`gh run download -R xziy/touch-vn -n TouchVN-<run>.ipa`. На телефон он встаёт только после подписи.
+(`./gradlew :composeApp:compileKotlinIosArm64`). `.github/workflows/ios.yml` (macos-26, линии как у Unitool):
+
+- `device` — push в ветку `ios-device` или вручную: Release для iPhone **без подписи** — артефакты
+  `ios-device-unsigned-app` (`TouchVN.app`) и `TouchVN-<run>.ipa`.
+  `gh run download <run> -R xziy/touch-vn -n TouchVN-<run>.ipa`
+- `simulator` — push в `ios-simulator`: Debug для симулятора на Apple silicon.
+
+Подписать и поставить на подключённый iPhone (на Mac с сертификатом):
+`IOS_SIGN_IDENTITY=<SHA-1> IOS_PROFILE=<profile>.mobileprovision scripts/ios-sign-and-install.sh TouchVN.app`.
+Push в `main` macOS-минут не тратит.
 
 ## E2E-тесты на wasm-сборке (Playwright)
 
