@@ -5,7 +5,7 @@ description: Check out Superizer beside the repo, set up Java and Gradle
 
 inputs:
   superizer_repo:
-    description: Repository of the library (SUPERIZER_LOCAL=1 in settings.gradle.kts)
+    description: Repository of the library (settings.gradle.kts includes ../superizer when it is there)
     required: true
   superizer_ref:
     description: Ref of the library; the commit of the version gradle/libs.versions.toml names

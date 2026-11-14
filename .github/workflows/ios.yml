@@ -26,8 +26,6 @@ env:
   # Compose Multiplatform 1.11.1 references UIViewLayoutRegion, an iOS 26 class, behind an
   # availability check; an older SDK's linker has to be told to leave it undefined.
   OTHER_LDFLAGS: '$(inherited) -Wl,-U,_OBJC_CLASS_$_UIViewLayoutRegion'
-  # Superizer from the checkout next door (settings.gradle.kts), not from ~/.m2.
-  SUPERIZER_LOCAL: '1'
 
 # macos-26, not macos-15, as in Unitool: macos-15's default Xcode 16.4 is older than what Kotlin
 # 2.4 and Compose 1.11 are built for, and the App Store takes only builds from the iOS 26 SDK.

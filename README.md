@@ -42,9 +42,9 @@
 Deep link: `touchvn://app/<id>` (`food`, `flowers`, `ads`, `visarun`, `exchange`):
 `./gradlew :composeApp:run --args="--link=touchvn://app/exchange"`, в вебе `?link=touchvn%3A%2F%2Fapp%2Ffood`.
 
-Superizer 0.8.2 берётся из `~/.m2` (`./gradlew publishToMavenLocal` в `../superizer`).
-`SUPERIZER_LOCAL=1` подставляет исходники соседнего `../superizer` (композитная сборка) — только когда
-этот чекаут той же версии.
+Superizer 0.8.2 без чекаута рядом берётся из `~/.m2` (`./gradlew publishToMavenLocal` в `../superizer`).
+Если рядом лежит чекаут `../superizer`, его исходники подставляются вместо пакета (композитная сборка, как
+в Unitool; так собирает CI). `SUPERIZER_FROM_MAVEN=1` — взять Superizer из `~/.m2`, даже когда чекаут есть.
 
 ## iPhone
 

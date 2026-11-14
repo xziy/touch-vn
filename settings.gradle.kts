@@ -16,11 +16,12 @@ pluginManagement {
 
 /**
  * Superizer, as a package: always by Maven coordinates (`libs.superizer.*`), never by project path.
- * By default it resolves from mavenLocal (`./gradlew publishToMavenLocal` in ../superizer).
- * SUPERIZER_LOCAL=1 substitutes the checkout next door instead — the same text, both ways.
+ * When the library's checkout is next door (../superizer, as CI puts it), `includeBuild` substitutes
+ * its sources for those coordinates. When it is not — or with `SUPERIZER_FROM_MAVEN=1` on purpose —
+ * the same coordinates resolve out of mavenLocal. The same text both ways, as in Unitool.
  */
 val superizerDir = file("../superizer")
-if (superizerDir.exists() && System.getenv("SUPERIZER_LOCAL") == "1") {
+if (superizerDir.exists() && System.getenv("SUPERIZER_FROM_MAVEN") != "1") {
     includeBuild(superizerDir)
 }
 
