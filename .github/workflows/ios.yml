@@ -1,0 +1,93 @@
+# The iPhone app, unsigned: a plain TouchVN-<run>.ipa in the run's artifacts — the same lane as
+# RestoApp's (restoapp-android, ios.yml). No certificate and no secret is involved. To put it on a
+# phone it has to be signed where the certificate is (or by AltStore / Sideloadly).
+#
+# Built on main, on the branch ios-ipa, and by hand. A commit of notes alone builds nothing.
+name: ios
+
+on:
+  push:
+    branches: [main, ios-ipa]
+    paths-ignore: ['**.md', 'e2e/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Compose Multiplatform 1.11.1 references UIViewLayoutRegion, an iOS 26 class, behind an
+  # availability check; with an older SDK the linker must leave it undefined (as in Unitool).
+  OTHER_LDFLAGS: '$(inherited) -Wl,-U,_OBJC_CLASS_$_UIViewLayoutRegion'
+  # Superizer from the checkout next door (settings.gradle.kts), not from ~/.m2.
+  SUPERIZER_LOCAL: '1'
+
+jobs:
+  ipa:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # Superizer 0.8.2 — the version gradle/libs.versions.toml names. Bumped together with it.
+      - uses: actions/checkout@v4
+        with:
+          repository: adminization/superizer
+          ref: a99b4baa9f98282c5bd443f096f65fc146f3391b
+          path: superizer-checkout
+
+      - name: Put the library where settings.gradle.kts looks for it
+        run: mv superizer-checkout ../superizer
+
+      # The newest Xcode the image has: Kotlin 2.4 and Compose 1.11 want a recent one.
+      - name: Xcode
+        run: |
+          xc=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xc"
+          xcodebuild -version && xcrun --sdk iphoneos --show-sdk-version
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The build number is the run number, so two installs never carry the same CFBundleVersion.
+      - name: Build for a device, unsigned
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build/ios-dd \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            OTHER_LDFLAGS="$OTHER_LDFLAGS" \
+            build 2>&1 | tee build/xcodebuild.log
+
+      # An .ipa is a zip with the app under Payload/. -y keeps the symlinks of the bundle as symlinks.
+      - name: Pack the .ipa
+        run: |
+          mkdir -p build/ipa/Payload
+          cp -R build/ios-dd/Build/Products/Release-iphoneos/TouchVN.app build/ipa/Payload/
+          cd build/ipa
+          zip -qry "TouchVN-${{ github.run_number }}.ipa" Payload
+
+      # archive: false uploads the file itself, not a zip around it.
+      - uses: actions/upload-artifact@v7
+        with:
+          path: build/ipa/TouchVN-${{ github.run_number }}.ipa
+          archive: false
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: xcodebuild-log
+          path: build/xcodebuild.log
+          retention-days: 14
+          if-no-files-found: ignore

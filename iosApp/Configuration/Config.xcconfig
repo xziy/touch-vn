@@ -1,0 +1,8 @@
+// The same identifier as the Android app (vn.touch.portal).
+BUNDLE_ID=vn.touch.portal
+// The bundle's name (TouchVN.app) has no space; the one under the icon does.
+APP_NAME=TouchVN
+DISPLAY_NAME=Touch VN
+// Kotlin builds the simulator framework for Apple silicon only (iosSimulatorArm64, no iosX64), so a
+// build for "any simulator" must not ask for an Intel slice the framework does not have.
+EXCLUDED_ARCHS[sdk=iphonesimulator*]=x86_64

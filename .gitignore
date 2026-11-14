@@ -1,0 +1,15 @@
+build/
+out/
+.gradle/
+.kotlin/
+*.hprof
+local.properties
+.idea/
+*.iml
+.DS_Store
+kotlin-js-store/
+xcuserdata/
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/
+.playwright-mcp/
