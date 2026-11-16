@@ -51,14 +51,43 @@ Superizer 0.8.2 без чекаута рядом берётся из `~/.m2` (`.
 `iosApp/` — Xcode-проект, `composeApp/src/iosMain` — хост на iOS. Без Mac собираются только klib-и
 (`./gradlew :composeApp:compileKotlinIosArm64`). `.github/workflows/ios.yml` (macos-26, линии как у Unitool):
 
-- `device` — push в ветку `ios-device` или вручную: Release для iPhone **без подписи** — артефакты
-  `ios-device-unsigned-app` (`TouchVN.app`) и `TouchVN-<run>.ipa`.
+- `testflight` — push в `main` (кроме правок только `*.md` и `e2e/`), запуск вручную на `main` или метка
+  `testflight` на PR в `main`: Release подписывается, уходит в App Store Connect, затем `distribute`
+  ждёт обработки и отдаёт сборку группе TestFlight `dev`. Номер сборки — номер запуска.
+- `device` — push в ветку `ios-device` или вручную не на `main`: Release для iPhone **без подписи** —
+  артефакты `ios-device-unsigned-app` (`TouchVN.app`) и `TouchVN-<run>.ipa`.
   `gh run download <run> -R xziy/touch-vn -n TouchVN-<run>.ipa`
 - `simulator` — push в `ios-simulator`: Debug для симулятора на Apple silicon.
 
 Подписать и поставить на подключённый iPhone (на Mac с сертификатом):
 `IOS_SIGN_IDENTITY=<SHA-1> IOS_PROFILE=<profile>.mobileprovision scripts/ios-sign-and-install.sh TouchVN.app`.
-Push в `main` macOS-минут не тратит.
+
+### TestFlight
+
+| | |
+|---|---|
+| Команда Apple | личная **Ivan Sizyi**, `ZK66E83UL5` (та же, что у RestoApp touch) |
+| Bundle ID | `vn.touch.portal`, как у Android; Push не включён |
+| App Store Connect | «Touch VN», Apple ID 6835445451, SKU `touch-vn`, основной язык — русский |
+| Группа | внутренняя `dev`: получает каждую сборку сама, отзывы включены; другая — переменная `TESTFLIGHT_GROUP` |
+
+Секреты репозитория (как у Unitool): `IOS_DIST_CERT_P12_BASE64`, `IOS_DIST_CERT_PASSWORD`,
+`IOS_PROFILE_BASE64`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64`. Нет хотя бы одного — линия
+`testflight` пишет, каких нет, и завершается зелёной. Подпись ручная: `scripts/ios-ci-signing.py`
+сверяет профиль с сертификатом и приложением и пишет `Signing.xcconfig` на один запуск.
+
+Ключи лежат на guibot2 в `~/Documents/apple-ivan-sizyi/` (только у владельца), в git их нет:
+сертификат Apple Distribution (до 16.11.2027, общий с RestoApp touch) — `ios_distribution.p12` и пароль
+к нему, профиль `Touch_VN_App_Store.mobileprovision` (до 16.11.2027), ключ API `AuthKey_5FBFF968UV.p8`
+(роль App Manager). Когда сертификат продлён, профиль выпускается заново и оба секрета обновляются:
+`base64 -w0 <файл> | gh secret set <ИМЯ> -R xziy/touch-vn`.
+
+Шифрование: своего у приложения нет, поэтому в `Info.plist` стоит `ITSAppUsesNonExemptEncryption = NO`, и
+сборка не ждёт ответа в App Store Connect. Если однажды понадобится YES, линия сама впишет его вместе
+с ключом документации, когда Apple такой ключ выдаст.
+
+Иконка — `iosApp/AppIcon.svg`, в каталоге `Assets.xcassets` лежит её PNG 1024×1024 без прозрачности.
+Без иконки App Store Connect сборку не принимает.
 
 ## E2E-тесты на wasm-сборке (Playwright)
 
@@ -119,4 +148,4 @@ Superizer в своей монохромной теме. Home — свой, в �
 
 - Сервер: каталоги, курсы и объявления по сети (`runtime.network`) вместо `Catalog.kt`, модерация объявлений.
 - Английский (и вьетнамский) — строки сейчас только на русском, поэтому хост объявляет один язык.
-- Иконка приложения для Android (сейчас системная по умолчанию).
+- Иконка приложения для Android (сейчас системная по умолчанию); у iOS она есть — `iosApp/AppIcon.svg`.

@@ -40,9 +40,9 @@ runs:
         distribution: temurin
         java-version: '21'
 
-    # setup-gradle writes its cache only on the default branch (main) unless told otherwise, and iOS is
-    # never built on main: ios-device and ios-simulator only read, so every run began with an empty
-    # ~/.gradle. Each lane's branch writes its own entry.
+    # setup-gradle writes its cache only on the default branch (main) unless told otherwise, and
+    # ios-device and ios-simulator only read, so every run there began with an empty ~/.gradle. Each
+    # lane's branch writes its own entry, main (testflight) included.
     - uses: gradle/actions/setup-gradle@v4
       with:
         cache-read-only: false

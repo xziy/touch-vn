@@ -1,8 +1,19 @@
+// The Apple Developer team that signs the app and owns it in App Store Connect: the personal team
+// "Ivan Sizyi" (README, iPhone).
+TEAM_ID=ZK66E83UL5
+DEVELOPMENT_TEAM=$(TEAM_ID)
 // The same identifier as the Android app (vn.touch.portal).
 BUNDLE_ID=vn.touch.portal
 // The bundle's name (TouchVN.app) has no space; the one under the icon does.
 APP_NAME=TouchVN
 DISPLAY_NAME=Touch VN
+// Assets.xcassets; drawn from iosApp/AppIcon.svg.
+ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon
 // Kotlin builds the simulator framework for Apple silicon only (iosSimulatorArm64, no iosX64), so a
 // build for "any simulator" must not ask for an Intel slice the framework does not have.
 EXCLUDED_ARCHS[sdk=iphonesimulator*]=x86_64
+// Automatic for a person at Xcode. The testflight lane of ios.yml signs by hand with an App Store
+// profile, and writes that into Signing.xcconfig for the one run (scripts/ios-ci-signing.py). Set
+// here rather than in the project, which would outrank this file.
+CODE_SIGN_STYLE=Automatic
+#include? "Signing.xcconfig"

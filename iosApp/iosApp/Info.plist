@@ -43,6 +43,14 @@
 			</array>
 		</dict>
 	</array>
+	<!--
+	  Export compliance, answered here so that no build waits for it in App Store Connect: the app has
+	  no cryptography of its own (no network either; orders leave as messenger links), only what iOS
+	  itself does. YES would need the key of approved documentation (ITMS-90592); the testflight lane
+	  writes both in should Apple ever issue one (README, iPhone).
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<!-- WhatsApp, Telegram and Zalo links are https; the phone button is tel:. Nothing to declare. -->
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
