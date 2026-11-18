@@ -10,7 +10,7 @@ androidTargetSdk = "36"
 kotlinxCoroutines = "1.10.2"
 kotlinxSerializationJson = "1.9.0"
 # The same Superizer that Unitool is built against (from ~/.m2 or the registry).
-superizer = "0.8.2"
+superizer = "0.10.0"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }

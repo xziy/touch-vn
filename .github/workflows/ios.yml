@@ -50,8 +50,8 @@ jobs:
       - uses: ./.github/actions/ios-prepare
         with:
           superizer_repo: ${{ vars.SUPERIZER_REPO || 'adminization/superizer' }}
-          # Superizer 0.8.2 — the version gradle/libs.versions.toml names. Bumped together with it.
-          superizer_ref: ${{ vars.SUPERIZER_REF || 'a99b4baa9f98282c5bd443f096f65fc146f3391b' }}
+          # Superizer 0.10.0 — the version gradle/libs.versions.toml names. Bumped together with it.
+          superizer_ref: ${{ vars.SUPERIZER_REF || '22297989f7984befc977035f0ee5120f002435a5' }}
           framework_task: linkDebugFrameworkIosSimulatorArm64
 
       - name: Build for the simulator
@@ -80,7 +80,7 @@ jobs:
       - uses: ./.github/actions/ios-prepare
         with:
           superizer_repo: ${{ vars.SUPERIZER_REPO || 'adminization/superizer' }}
-          superizer_ref: ${{ vars.SUPERIZER_REF || 'a99b4baa9f98282c5bd443f096f65fc146f3391b' }}
+          superizer_ref: ${{ vars.SUPERIZER_REF || '22297989f7984befc977035f0ee5120f002435a5' }}
           framework_task: linkReleaseFrameworkIosArm64
 
       # Unsigned on purpose: the certificate lives on the owner's Mac and never in this repository.
@@ -167,7 +167,7 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         with:
           superizer_repo: ${{ vars.SUPERIZER_REPO || 'adminization/superizer' }}
-          superizer_ref: ${{ vars.SUPERIZER_REF || 'a99b4baa9f98282c5bd443f096f65fc146f3391b' }}
+          superizer_ref: ${{ vars.SUPERIZER_REF || '22297989f7984befc977035f0ee5120f002435a5' }}
           framework_task: linkReleaseFrameworkIosArm64
 
       # Signed by hand, as Unitool is. Automatic signing on a clean runner would have to mint a

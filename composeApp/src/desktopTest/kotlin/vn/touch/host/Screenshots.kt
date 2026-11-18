@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Density
+import cx.m42.superizer.ThemeMode
 import cx.m42.superizer.host.storage.PrefsStorage
 import java.awt.image.BufferedImage
 import java.io.File
@@ -31,9 +32,12 @@ import kotlinx.coroutines.SupervisorJob
 
 /**
  * Phone screenshots, rendered headless: 412×915 dp at 2× into build/screenshots/.
- * Each frame starts from a fresh install and taps its way to the state it shows.
+ * Each frame starts from a fresh install and taps its way to the state it shows. A few frames are
+ * also drawn in the dark theme (`-dark`); `SHOTS_DARK=1` draws every frame in both, and `SHOTS=<regex>`
+ * draws only the frames whose names match.
  *
  *     ./gradlew :composeApp:desktopTest --tests '*Screenshots*'
+ *     SHOTS='food' SHOTS_DARK=1 ./gradlew :composeApp:desktopTest --tests '*Screenshots*'
  */
 class Screenshots {
 
@@ -48,11 +52,24 @@ class Screenshots {
     private val scale = 2f
     private val out = File("build/screenshots")
 
+    private val only: Regex? = System.getenv("SHOTS")?.takeIf { it.isNotBlank() }?.let(::Regex)
+    private val allDark: Boolean = System.getenv("SHOTS_DARK") == "1"
+
+    /** The frames drawn in the dark theme too, without SHOTS_DARK. */
+    private val dark = setOf("01-home", "02-food", "03-food-menu", "06-flowers", "09-ads", "13-visarun", "16-exchange", "19-bonus")
+
     private fun shot(name: String, drive: Drive.() -> Unit) {
+        if (only != null && !only.containsMatchIn(name)) return
+        shot(name, darkTheme = false, drive)
+        if (allDark || name in dark) shot("$name-dark", darkTheme = true, drive)
+    }
+
+    private fun shot(name: String, darkTheme: Boolean, drive: Drive.() -> Unit) {
         PrefsStorage.useDirectory(Files.createTempDirectory("touchvn-shot").toFile())
         runDesktopComposeUiTest(width = (widthDp * scale).toInt(), height = (heightDp * scale).toInt()) {
             val superizer = buildTouchHost(CoroutineScope(SupervisorJob() + Dispatchers.Unconfined), debug = false)
             superizer.settings.chooseLanguage("ru")
+            superizer.settings.chooseTheme(if (darkTheme) ThemeMode.Dark else ThemeMode.Light)
             setContent {
                 CompositionLocalProvider(LocalDensity provides Density(scale)) { TouchApp(superizer) }
             }

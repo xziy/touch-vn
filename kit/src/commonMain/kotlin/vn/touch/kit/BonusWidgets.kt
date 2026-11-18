@@ -24,20 +24,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.composeunstyled.Text
+import cx.m42.superizer.kit.Text
 import cx.m42.superizer.runtime.LocalAppRuntime
-import cx.m42.superizer.theme.AppTheme
 import cx.m42.superizer.ui.platform.SystemBackHandler
-
-/** The programme's colour pair: sun-yellow ground, dark-amber ink — distinct from coral prices. */
-private val BonusFill: Color = Color(0xFFFFF4D6)
-private val BonusInk: Color = Color(0xFF9A6200)
 
 // ------------------------------------------------------------------ the frame
 
@@ -60,54 +58,73 @@ public fun PortalScreen(instance: PortalInstance<*>, bonus: CityBonus?, content:
 
 // ------------------------------------------------------------------ marks on cards
 
-/** "+375 бонусов" in the programme's colours, on a card or a row of a partner. */
+/** A gold coin in a disc: the programme's mark wherever a figure in bonuses stands. */
+@Composable
+public fun CoinMark(size: Dp = 28.dp, modifier: Modifier = Modifier) {
+    val c = Touch.colors
+    Box(
+        modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(Brush.linearGradient(listOf(Color(0xFFFFD55A), Color(0xFFF59E0B)))),
+        contentAlignment = Alignment.Center,
+    ) {
+        GlyphIcon(Glyph.Coin, Color.White, size = size * 0.72f)
+    }
+}
+
+/** "+375 бонусов" in the programme's gold, on a card or a row of a partner. */
 @Composable
 public fun BonusBadge(text: String, modifier: Modifier = Modifier) {
+    val c = Touch.colors
     Row(
-        modifier = modifier.clip(RoundedCornerShape(8.dp)).background(BonusFill).padding(horizontal = 7.dp, vertical = 3.dp),
+        modifier = modifier.clip(RoundedCornerShape(50)).background(c.coinSoft).padding(start = 3.dp, end = 9.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GlyphIcon(Glyph.Coin, BonusInk, size = 13.dp)
-        Spacer(Modifier.width(4.dp))
-        Text(text, style = AppTheme.footnote.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp), color = BonusInk, maxLines = 1)
+        CoinMark(16.dp)
+        Spacer(Modifier.width(5.dp))
+        Text(text, style = Touch.type.micro, color = c.coinInk, maxLines = 1)
     }
 }
 
 /**
- * The line at the top of a service's front page: "Городские бонусы ...... 1 250 бонусов ›".
- * One tap opens the bonus screen. Tag `$tagPrefix:bonus`.
+ * The wallet line at the top of a service's front page: "Городские бонусы … 1 250 ›". One tap
+ * opens the bonus screen. Tag `$tagPrefix:bonus`.
  */
 @Composable
 public fun BonusBalanceChip(bonus: CityBonus?, onClick: () -> Unit, tagPrefix: String, modifier: Modifier = Modifier) {
     if (bonus == null) return
     val balance by bonus.balance.collectAsState()
+    val c = Touch.colors
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = Gutter, vertical = 6.dp)
             .testTag("$tagPrefix:bonus")
-            .clip(RoundedCornerShape(14.dp))
-            .background(BonusFill)
-            .clickable(role = Role.Button, onClick = onClick)
+            .cardSurface(RoundedCornerShape(18.dp))
+            .pressable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(30.dp).clip(CircleShape).background(Sun), contentAlignment = Alignment.Center) {
-            GlyphIcon(Glyph.Coin, Color.White, size = 18.dp)
-        }
-        Spacer(Modifier.width(10.dp))
+        CoinMark(34.dp)
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(CITY_BONUS_TITLE, style = AppTheme.label.copy(fontWeight = FontWeight.SemiBold), color = Ink)
-            Text("Копите и тратите во всех сервисах города", style = AppTheme.footnote.copy(fontSize = 12.sp), color = Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(CITY_BONUS_TITLE, style = Touch.type.caption.copy(fontWeight = FontWeight.Bold), color = c.ink)
+            Text("Один счёт на все сервисы города", style = Touch.type.micro.copy(fontWeight = FontWeight.Normal), color = c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Spacer(Modifier.width(8.dp))
-        Text(
-            formatBonus(balance),
-            style = AppTheme.body.copy(fontWeight = FontWeight.Bold),
-            color = BonusInk,
-            modifier = Modifier.testTag("$tagPrefix:bonus-balance"),
-        )
-        GlyphIcon(Glyph.Chevron, BonusInk, size = 18.dp)
+        Row(
+            Modifier.clip(RoundedCornerShape(50)).background(c.coinSoft).padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                formatBonus(balance),
+                style = Touch.type.caption.copy(fontWeight = FontWeight.ExtraBold),
+                color = c.coinInk,
+                modifier = Modifier.testTag("$tagPrefix:bonus-balance"),
+            )
+            GlyphIcon(Glyph.Chevron, c.coinInk, size = 16.dp)
+        }
     }
 }
 
@@ -127,47 +144,46 @@ public fun BonusOfferCard(
     earnWhat: String = "за этот заказ",
 ) {
     if (bonus == null) return
+    val c = Touch.colors
     if (terms == null) {
         Row(
-            modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp).testTag("$tagPrefix:bonus-none"),
+            modifier = modifier.fillMaxWidth().padding(horizontal = Gutter + 2.dp, vertical = 8.dp).testTag("$tagPrefix:bonus-none"),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            GlyphIcon(Glyph.Coin, Muted, size = 16.dp)
+            GlyphIcon(Glyph.Coin, c.muted, size = 16.dp)
             Spacer(Modifier.width(8.dp))
-            Text("Не участвует в городской бонусной системе", style = AppTheme.footnote, color = Muted)
+            Text("Не участвует в городской бонусной системе", style = Touch.type.caption, color = c.muted)
         }
         return
     }
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(20.dp)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = Gutter, vertical = 8.dp)
             .testTag("$tagPrefix:bonus-offer")
             .clip(shape)
-            .background(BonusFill)
-            .border(1.dp, Sun.copy(alpha = 0.6f), shape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .background(Brush.horizontalGradient(listOf(c.coinSoft, c.coinSoft.copy(alpha = 0.55f))))
+            .border(1.dp, c.coin.copy(alpha = 0.35f), shape)
+            .pressable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(40.dp).clip(CircleShape).background(Sun), contentAlignment = Alignment.Center) {
-            GlyphIcon(Glyph.Coin, Color.White, size = 22.dp)
-        }
+        CoinMark(42.dp)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text("Партнёр городской бонусной системы", style = AppTheme.footnote, color = BonusInk)
+            Text("Партнёр городских бонусов", style = Touch.type.micro, color = c.coinInk)
             val headline = if (earn > 0) "+${formatBonus(earn)} $earnWhat" else bonusRate(terms)?.let { "$it $earnWhat" }
             if (headline != null) {
-                Text(headline, style = AppTheme.body.copy(fontWeight = FontWeight.Bold), color = Ink, modifier = Modifier.testTag("$tagPrefix:bonus-earn"))
+                Text(headline, style = Touch.type.strong, color = c.ink, modifier = Modifier.testTag("$tagPrefix:bonus-earn"))
             }
             Text(
-                if (terms.canSpend) "Можно оплатить бонусами до ${terms.spendPercent}% · 1 бонус = $VND_PER_BONUS ₫" else "Здесь бонусы только начисляются",
-                style = AppTheme.footnote,
-                color = Muted,
+                if (terms.canSpend) "Оплата бонусами до ${terms.spendPercent}% · 1 бонус = $VND_PER_BONUS ₫" else "Здесь бонусы только начисляются",
+                style = Touch.type.caption,
+                color = c.muted,
             )
         }
-        GlyphIcon(Glyph.Chevron, BonusInk, size = 18.dp)
+        GlyphIcon(Glyph.Chevron, c.coinInk, size = 18.dp)
     }
 }
 
@@ -189,6 +205,7 @@ public fun BonusSpendRow(
 ) {
     if (bonus == null || terms == null) return
     val balance by bonus.balance.collectAsState()
+    val c = Touch.colors
     val max = terms.maxSpend(priceVnd, balance)
     val reason = when {
         !terms.canSpend -> "Этот партнёр только начисляет бонусы"
@@ -200,42 +217,48 @@ public fun BonusSpendRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = Gutter, vertical = 6.dp)
             .testTag("$tagPrefix:bonus-use")
-            .clip(RoundedCornerShape(14.dp))
-            .background(BonusFill)
+            .cardSurface(RoundedCornerShape(18.dp))
             .clickable(enabled = reason == null, role = Role.Switch) { onUse(!use) }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GlyphIcon(Glyph.Coin, BonusInk, size = 20.dp)
-        Spacer(Modifier.width(10.dp))
+        CoinMark(36.dp)
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text("Оплатить бонусами", style = AppTheme.body.copy(fontWeight = FontWeight.SemiBold), color = Ink)
+            Text("Оплатить бонусами", style = Touch.type.strong, color = c.ink)
             Text(
-                reason ?: "Спишем ${formatBonus(max)} = −${formatVnd(max * VND_PER_BONUS)} · на счёте ${formatBonus(balance)}",
-                style = AppTheme.footnote,
-                color = Muted,
+                reason ?: "−${formatVnd(max * VND_PER_BONUS)} · спишем ${formatBonus(max)}",
+                style = Touch.type.caption,
+                color = c.muted,
             )
         }
         Spacer(Modifier.width(10.dp))
-        Switch(active, enabled = reason == null)
+        Toggle(active, enabled = reason == null)
     }
 }
 
-/** A drawn switch: the row around it is what is tapped. */
+/** A drawn switch in the coin's gold: the row around it is what is tapped. */
 @Composable
-private fun Switch(on: Boolean, enabled: Boolean) {
+private fun Toggle(on: Boolean, enabled: Boolean) {
+    val c = Touch.colors
     val track = when {
-        !enabled -> Line
-        on -> Coral
-        else -> Color(0xFFD4D4D8)
+        !enabled -> c.line
+        on -> c.coin
+        else -> c.field
     }
     Box(
-        Modifier.width(44.dp).height(26.dp).clip(RoundedCornerShape(50)).background(track).padding(3.dp),
+        Modifier
+            .width(48.dp)
+            .height(28.dp)
+            .clip(RoundedCornerShape(50))
+            .background(track)
+            .then(if (on || !enabled) Modifier else Modifier.border(1.dp, c.line, RoundedCornerShape(50)))
+            .padding(3.dp),
         contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
-        Box(Modifier.size(20.dp).clip(CircleShape).background(Color.White))
+        Box(Modifier.size(22.dp).shadow(2.dp, CircleShape).clip(CircleShape).background(Color.White))
     }
 }
 
@@ -243,11 +266,22 @@ private fun Switch(on: Boolean, enabled: Boolean) {
 @Composable
 public fun BonusTotals(bonus: CityBonus?, deal: BonusDeal, tagPrefix: String) {
     if (bonus == null) return
+    val c = Touch.colors
     if (deal.spend > 0) {
-        SummaryRow("Бонусами (${formatBonus(deal.spend)})", "−${formatVnd(deal.discount)}", valueModifier = Modifier.testTag("$tagPrefix:bonus-discount"))
+        BonusLine("Бонусами (${formatBonus(deal.spend)})", "−${formatVnd(deal.discount)}", c.success, Modifier.testTag("$tagPrefix:bonus-discount"))
     }
     if (deal.earn > 0) {
-        SummaryRow("Вернётся бонусами", "+${formatBonus(deal.earn)}", valueModifier = Modifier.testTag("$tagPrefix:bonus-back"))
+        BonusLine("Вернётся бонусами", "+${formatBonus(deal.earn)}", c.coinInk, Modifier.testTag("$tagPrefix:bonus-back"))
+    }
+}
+
+@Composable
+private fun BonusLine(label: String, value: String, color: Color, valueModifier: Modifier) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = Gutter, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        GlyphIcon(Glyph.Coin, Touch.colors.coin, size = 15.dp)
+        Spacer(Modifier.width(6.dp))
+        Text(label, style = Touch.type.body, color = Touch.colors.muted, modifier = Modifier.weight(1f))
+        Text(value, style = Touch.type.body.copy(fontWeight = FontWeight.Bold), color = color, modifier = valueModifier)
     }
 }
 
@@ -264,144 +298,198 @@ public fun bonusMessageLines(deal: BonusDeal): String = buildString {
 public fun BonusResult(bonus: CityBonus?, earned: Long, spent: Long, onClick: () -> Unit, tagPrefix: String) {
     if (bonus == null || (earned <= 0 && spent <= 0)) return
     val balance by bonus.balance.collectAsState()
-    Column(
+    val c = Touch.colors
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = Gutter, vertical = 8.dp)
             .testTag("$tagPrefix:bonus-result")
-            .clip(RoundedCornerShape(16.dp))
-            .background(BonusFill)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .clip(RoundedCornerShape(22.dp))
+            .background(WalletGradient)
+            .pressable(onClick = onClick)
+            .padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (earned > 0) Text("+${formatBonus(earned)}", style = AppTheme.header, color = BonusInk)
-        if (spent > 0) Text("Списано ${formatBonus(spent)}", style = AppTheme.label, color = Ink)
-        Text("На счёте ${formatBonus(balance)} · $CITY_BONUS_TITLE", style = AppTheme.footnote, color = Muted)
+        CoinMark(48.dp)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            if (earned > 0) Text("+${formatBonus(earned)}", style = Touch.type.title, color = Color.White)
+            if (spent > 0) Text("Списано ${formatBonus(spent)}", style = Touch.type.body.copy(fontWeight = FontWeight.SemiBold), color = Color.White)
+            Text("На счёте ${formatBonus(balance)}", style = Touch.type.caption, color = Color.White.copy(alpha = 0.8f))
+        }
+        GlyphIcon(Glyph.Chevron, Color.White.copy(alpha = 0.8f), size = 20.dp)
     }
 }
+
+/** The wallet's own ground: night over the bay, with the coin's gold glowing from a corner. */
+public val WalletGradient: Brush = Brush.linearGradient(listOf(Color(0xFF14213D), Color(0xFF0B3B4F), Color(0xFF0B6B69)))
 
 // ------------------------------------------------------------------ the bonus screen
 
 /**
- * The city bonus screen: the balance, how the programme works, where bonuses come from and go to,
- * and the history. [current] is the service it was opened from, marked in the list.
+ * The city bonus screen: the wallet card, how the programme works, where bonuses come from and go
+ * to, and the history. [current] is the service it was opened from, marked in the list.
  * Tags `bonus:balance`, `bonus:place-<id>`, `bonus:entry-<n>`.
  */
 @Composable
 public fun BonusPage(bonus: CityBonus, onOpenPlace: (String) -> Unit, current: String? = null) {
     val balance by bonus.balance.collectAsState()
     val history by bonus.history.collectAsState()
+    val c = Touch.colors
     PortalPage(Modifier.testTag("bonus:page")) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .background(Coral)
-                .drawBehind {
-                    drawCircle(Color.White.copy(alpha = 0.10f), radius = size.height * 0.7f, center = Offset(size.width * 0.95f, 0f))
-                    drawCircle(Sun.copy(alpha = 0.35f), radius = size.height * 0.35f, center = Offset(size.width * 0.85f, size.height))
-                }
-                .padding(20.dp),
-        ) {
-            Text("Городская бонусная система", style = AppTheme.label, color = Color.White.copy(alpha = 0.9f))
-            Spacer(Modifier.height(6.dp))
-            Text(
-                groupDigits(balance),
-                style = AppTheme.title.copy(fontSize = 44.sp, lineHeight = 50.sp, fontWeight = FontWeight.Bold),
-                color = Color.White,
-                modifier = Modifier.testTag("bonus:balance"),
-            )
-            Text(bonusWord(balance) + " на счёте", style = AppTheme.body, color = Color.White)
-            Spacer(Modifier.height(10.dp))
-            Box(Modifier.clip(RoundedCornerShape(50)).background(Color.White).padding(horizontal = 12.dp, vertical = 5.dp)) {
-                Text(
-                    "≈ ${formatVnd(balance * VND_PER_BONUS)} на оплату заказов",
-                    style = AppTheme.footnote.copy(fontWeight = FontWeight.SemiBold),
-                    color = Coral,
-                )
-            }
-        }
+        WalletCard(balance, Modifier.padding(horizontal = Gutter).padding(top = 12.dp))
 
         SectionHeader("Как это работает")
-        Step(1, "Получайте", "За заказы, брони и обмен у партнёров — у них на карточке значок «+N бонусов».")
-        Step(2, "Тратьте", "При оформлении включите «Оплатить бонусами»: 1 бонус = $VND_PER_BONUS ₫, каждый партнёр принимает бонусами свою долю цены.")
-        Step(3, "По всему городу", "Один счёт на все сервисы: заработали на еде — потратили на цветах или визаране.")
+        Row(Modifier.fillMaxWidth().padding(horizontal = Gutter), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Step(Glyph.Gift, "Получайте", "за заказы у партнёров со значком «+N»", Modifier.weight(1f))
+            Step(Glyph.Coin, "Тратьте", "1 бонус = $VND_PER_BONUS ₫ при оформлении", Modifier.weight(1f))
+            Step(Glyph.Swap, "Везде", "один счёт на все сервисы города", Modifier.weight(1f))
+        }
 
         if (bonus.places.isNotEmpty()) {
             SectionHeader("Где получить и потратить")
-            bonus.places.forEach { place -> PlaceRow(place, here = place.appId == current) { onOpenPlace(place.appId) } }
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = Gutter).cardSurface(),
+            ) {
+                bonus.places.forEachIndexed { i, place ->
+                    if (i > 0) Box(Modifier.fillMaxWidth().padding(start = 72.dp).height(1.dp).background(c.line))
+                    PlaceRow(place, here = place.appId == current) { onOpenPlace(place.appId) }
+                }
+            }
         }
 
         SectionHeader("История")
         if (history.isEmpty()) {
             Hint("Пока пусто — бонусы появятся после первого заказа у партнёра")
-        }
-        history.take(HISTORY_SHOWN).forEachIndexed { i, e ->
-            if (i > 0) Divider()
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp).testTag("bonus:entry-$i"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(e.title, style = AppTheme.body, color = Ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(formatDay(e.at), style = AppTheme.footnote, color = Muted)
+        } else {
+            Column(Modifier.fillMaxWidth().padding(horizontal = Gutter).cardSurface().padding(vertical = 4.dp)) {
+                history.take(HISTORY_SHOWN).forEachIndexed { i, e ->
+                    if (i > 0) Box(Modifier.fillMaxWidth().padding(start = 64.dp).height(1.dp).background(c.line))
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp).testTag("bonus:entry-$i"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        val plus = e.amount > 0
+                        Box(
+                            Modifier.size(38.dp).clip(CircleShape).background(if (plus) c.coinSoft else c.field),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            GlyphIcon(if (plus) Glyph.Plus else Glyph.Minus, if (plus) c.coinInk else c.muted, size = 18.dp)
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(e.title, style = Touch.type.body.copy(fontWeight = FontWeight.Medium), color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(formatDay(e.at), style = Touch.type.caption, color = c.muted)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            (if (plus) "+" else "−") + groupDigits(kotlin.math.abs(e.amount)),
+                            style = Touch.type.strong,
+                            color = if (plus) c.coinInk else c.ink,
+                        )
+                    }
                 }
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    (if (e.amount > 0) "+" else "−") + groupDigits(kotlin.math.abs(e.amount)),
-                    style = AppTheme.body.copy(fontWeight = FontWeight.Bold),
-                    color = if (e.amount > 0) BonusInk else Ink,
-                )
             }
         }
         Notice("Демо: бонусы хранятся на этом устройстве и начисляются сразу после отправки заказа. В рабочей версии — после того как партнёр подтвердит заказ.")
     }
 }
 
+/** The balance as a card in a wallet: the figure large, what it is worth, the coin glowing. */
+@Composable
+public fun WalletCard(balance: Long, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(18.dp, RoundedCornerShape(28.dp), ambientColor = Color(0x660B3B4F), spotColor = Color(0x660B3B4F))
+            .clip(RoundedCornerShape(28.dp))
+            .background(WalletGradient)
+            .drawBehind {
+                drawCircle(
+                    Brush.radialGradient(listOf(Color(0x2EFFFFFF), Color.Transparent), center = Offset(size.width * 0.95f, size.height * 0.05f), radius = size.width * 0.6f),
+                    radius = size.width * 0.6f,
+                    center = Offset(size.width * 0.95f, size.height * 0.05f),
+                )
+                drawCircle(Color.White.copy(alpha = 0.05f), radius = size.height * 0.6f, center = Offset(size.width * 0.1f, size.height * 1.1f))
+            }
+            .padding(22.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("TOUCH VN · ГОРОДСКИЕ БОНУСЫ", style = Touch.type.micro.copy(letterSpacing = 1.2.sp), color = Color.White.copy(alpha = 0.75f), modifier = Modifier.weight(1f))
+            CoinMark(30.dp)
+        }
+        Spacer(Modifier.height(18.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                groupDigits(balance),
+                style = Touch.type.display.copy(fontSize = 46.sp, lineHeight = 50.sp),
+                color = Color.White,
+                modifier = Modifier.testTag("bonus:balance"),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(bonusWord(balance), style = Touch.type.strong, color = Color.White.copy(alpha = 0.85f), modifier = Modifier.padding(bottom = 7.dp))
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(
+            Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.14f)).padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlyphIcon(Glyph.Wallet, Color(0xFFFCD34D), size = 14.dp)
+            Spacer(Modifier.width(6.dp))
+            Text("≈ ${formatVnd(balance * VND_PER_BONUS)} на оплату заказов", style = Touch.type.micro, color = Color.White)
+        }
+    }
+}
+
 private const val HISTORY_SHOWN = 50
 
 @Composable
-private fun Step(n: Int, title: String, text: String) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-        Box(Modifier.size(30.dp).clip(CircleShape).background(BonusFill), contentAlignment = Alignment.Center) {
-            Text("$n", style = AppTheme.label.copy(fontWeight = FontWeight.Bold), color = BonusInk)
+private fun Step(glyph: Glyph, title: String, text: String, modifier: Modifier) {
+    val c = Touch.colors
+    Column(modifier.cardSurface(RoundedCornerShape(18.dp)).padding(12.dp)) {
+        Box(Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(c.coinSoft), contentAlignment = Alignment.Center) {
+            GlyphIcon(glyph, c.coinInk, size = 18.dp)
         }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = AppTheme.body.copy(fontWeight = FontWeight.SemiBold), color = Ink)
-            Text(text, style = AppTheme.footnote, color = Muted)
-        }
+        Spacer(Modifier.height(10.dp))
+        Text(title, style = Touch.type.caption.copy(fontWeight = FontWeight.Bold), color = c.ink)
+        Spacer(Modifier.height(2.dp))
+        Text(text, style = Touch.type.micro.copy(fontWeight = FontWeight.Normal), color = c.muted)
     }
 }
 
 @Composable
 private fun PlaceRow(place: BonusPlace, here: Boolean, onClick: () -> Unit) {
+    val c = Touch.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("bonus:place-${place.appId}")
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(CoralSoft), contentAlignment = Alignment.Center) {
-            GlyphIcon(place.glyph, Coral, size = 24.dp)
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        IconTile(place.glyph, size = 44.dp, accent = place.tone.accent())
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(place.title, style = AppTheme.body.copy(fontWeight = FontWeight.Bold), color = Ink)
+                Text(place.title, style = Touch.type.strong, color = c.ink)
                 if (here) {
                     Spacer(Modifier.width(8.dp))
                     Badge("Вы здесь")
                 }
             }
-            Text("Получить: ${place.earn}", style = AppTheme.footnote, color = Muted)
-            Text("Потратить: ${place.spend}", style = AppTheme.footnote, color = Muted)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GlyphIcon(Glyph.Plus, c.coinInk, size = 12.dp)
+                Spacer(Modifier.width(4.dp))
+                Text(place.earn, style = Touch.type.caption, color = c.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GlyphIcon(Glyph.Minus, c.muted, size = 12.dp)
+                Spacer(Modifier.width(4.dp))
+                Text(place.spend, style = Touch.type.caption, color = c.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
         }
-        GlyphIcon(Glyph.Chevron, Muted, size = 18.dp)
+        GlyphIcon(Glyph.Chevron, c.muted, size = 18.dp)
     }
 }
 
