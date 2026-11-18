@@ -112,7 +112,7 @@ internal class FoodInstance(private val runtime: InstanceRuntime) : PortalInstan
     }
 
     @Composable
-    override fun Content() { vn.touch.kit.PortalTheme { PortalScreen(this, bonus) { FoodScreen(this) } } }
+    override fun Content() { vn.touch.kit.PortalTheme(vn.touch.kit.Tone.Chili) { PortalScreen(this, bonus) { FoodScreen(this) } } }
 
     companion object {
         const val KEY_CART = "cart"

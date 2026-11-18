@@ -88,7 +88,7 @@ internal class FlowersInstance(private val runtime: InstanceRuntime) : PortalIns
     }
 
     @Composable
-    override fun Content() { vn.touch.kit.PortalTheme { PortalScreen(this, bonus) { FlowersScreen(this) } } }
+    override fun Content() { vn.touch.kit.PortalTheme(vn.touch.kit.Tone.Rose) { PortalScreen(this, bonus) { FlowersScreen(this) } } }
 
     companion object { const val KEY_SENDER = "sender" }
 }

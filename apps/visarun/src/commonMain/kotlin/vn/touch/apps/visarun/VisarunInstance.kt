@@ -106,7 +106,7 @@ internal class VisarunInstance(private val runtime: InstanceRuntime) : PortalIns
     }
 
     @Composable
-    override fun Content() { vn.touch.kit.PortalTheme { PortalScreen(this, bonus) { VisarunScreen(this) } } }
+    override fun Content() { vn.touch.kit.PortalTheme(vn.touch.kit.Tone.Sky) { PortalScreen(this, bonus) { VisarunScreen(this) } } }
 
     companion object {
         const val KEY_STAY = "stay"

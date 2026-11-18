@@ -9,7 +9,7 @@ internal enum class Currency(val code: String, val label: String, val glyph: Gly
     USD("USD", "Доллар", Glyph.Dollar),
     EUR("EUR", "Евро", Glyph.Euro),
     RUB("RUB", "Рубль", Glyph.Ruble),
-    USDT("USDT", "USDT", Glyph.Coin),
+    USDT("USDT", "Tether", Glyph.Wallet),
 }
 
 internal enum class PointType(val label: String, val glyph: Glyph) {
