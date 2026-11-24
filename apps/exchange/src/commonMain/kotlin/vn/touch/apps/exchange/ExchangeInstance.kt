@@ -60,7 +60,7 @@ internal class ExchangeInstance(private val runtime: InstanceRuntime) : PortalIn
     }
 
     @Composable
-    override fun Content() { vn.touch.kit.PortalTheme { PortalScreen(this, bonus) { ExchangeScreen(this) } } }
+    override fun Content() { vn.touch.kit.PortalTheme(vn.touch.kit.Tone.Jade) { PortalScreen(this, bonus) { ExchangeScreen(this) } } }
 
     companion object {
         const val KEY_CURRENCY = "currency"

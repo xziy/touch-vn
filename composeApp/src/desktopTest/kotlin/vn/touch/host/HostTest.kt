@@ -5,10 +5,15 @@ package vn.touch.host
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import cx.m42.superizer.Superizer
 import cx.m42.superizer.host.storage.PrefsStorage
@@ -16,6 +21,7 @@ import java.nio.file.Files
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,6 +36,27 @@ class HostTest {
     private fun host(): Superizer =
         buildTouchHost(CoroutineScope(SupervisorJob() + Dispatchers.Unconfined), debug = true)
             .also { it.settings.chooseLanguage("ru") }
+
+    @Test
+    fun theMenuOpensOnTheRightAndBackIsOnTheLeft() = runComposeUiTest {
+        setContent { TouchApp(host()) }
+        waitForIdle()
+        val middle = onRoot().fetchSemanticsNode().boundsInRoot.center.x
+
+        val menu = onNodeWithContentDescription("Открыть меню")
+        assertTrue(menu.fetchSemanticsNode().boundsInRoot.center.x > middle)
+        menu.performTouchInput { click() }
+
+        val catalog = onNodeWithText("Все приложения").assertIsDisplayed()
+        assertTrue(catalog.fetchSemanticsNode().boundsInRoot.center.x > middle)
+        catalog.performTouchInput { click() }
+
+        val back = onNodeWithContentDescription("Назад").assertIsDisplayed()
+        assertTrue(back.fetchSemanticsNode().boundsInRoot.center.x < middle)
+        assertTrue(menu.fetchSemanticsNode().boundsInRoot.center.x > middle)
+        back.performClick()
+        onNodeWithTag("home:search").assertIsDisplayed()
+    }
 
     @Test
     fun everyServiceIsOnHomeAndOpens() = runComposeUiTest {

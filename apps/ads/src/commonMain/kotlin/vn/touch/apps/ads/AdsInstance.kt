@@ -103,7 +103,7 @@ internal class AdsInstance(private val runtime: InstanceRuntime) : PortalInstanc
     }
 
     @Composable
-    override fun Content() { vn.touch.kit.PortalTheme { PortalScreen(this, bonus) { AdsScreen(this) } } }
+    override fun Content() { vn.touch.kit.PortalTheme(vn.touch.kit.Tone.Violet) { PortalScreen(this, bonus) { AdsScreen(this) } } }
 
     companion object { const val KEY_MINE = "mine" }
 }

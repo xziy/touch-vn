@@ -89,6 +89,8 @@ public data class BonusPlace(
     val glyph: Glyph,
     val earn: String,
     val spend: String,
+    /** The service's colour, for its icon in the list. */
+    val tone: Tone = Tone.Lagoon,
 )
 
 /** The portal-wide bonus account. Apps reach it with `runtime.service(CityBonus.Key)`. */

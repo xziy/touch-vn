@@ -9,11 +9,12 @@ import vn.touch.kit.Glyph
 import vn.touch.kit.formatVnd
 import vn.touch.kit.looksLikePhone
 
-internal enum class Kind(val label: String, val short: String, val glyph: Glyph) {
-    Roses("Розы", "Розы", Glyph.Flower),
+/** [glyph] marks the category's tile; [art] is drawn on the bouquet's picture. */
+internal enum class Kind(val label: String, val short: String, val glyph: Glyph, val art: Glyph = Glyph.Flower) {
+    Roses("Розы", "Розы", Glyph.Heart),
     Mixed("Сборные", "Сборные", Glyph.Flower),
-    Box("В коробке", "Коробки", Glyph.Gift),
-    Basket("Корзины", "Корзины", Glyph.Basket),
+    Box("В коробке", "Коробки", Glyph.Gift, Glyph.Gift),
+    Basket("Корзины", "Корзины", Glyph.Basket, Glyph.Basket),
     Tropical("Тропические", "Тропики", Glyph.Leaf),
 }
 

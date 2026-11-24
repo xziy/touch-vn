@@ -1,6 +1,7 @@
 package vn.touch.host
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import cx.m42.superizer.HostScreen
 import cx.m42.superizer.LanguageOption
 import cx.m42.superizer.Superizer
@@ -12,6 +13,7 @@ import cx.m42.superizer.host.SystemClock
 import cx.m42.superizer.host.platform.currentPlatform
 import cx.m42.superizer.host.storage.PrefsStorageService
 import cx.m42.superizer.runtime.HostInfo
+import cx.m42.superizer.ui.components.LocalDrawerOnRight
 import cx.m42.superizer.ui.shell.SuperizerShell
 import kotlinx.coroutines.CoroutineScope
 import vn.touch.apps.ads.AdsApp
@@ -26,6 +28,7 @@ import vn.touch.kit.CityBonus
 import vn.touch.kit.Glyph
 import vn.touch.kit.PortalTheme
 import vn.touch.kit.StoredCityBonus
+import vn.touch.kit.Tone
 
 public const val HOST_NAME: String = "Touch VN"
 public const val SCHEME: String = "touchvn"
@@ -63,11 +66,11 @@ private fun cityBonus(scope: CoroutineScope, open: (String) -> Unit): CityBonus 
     clock = SystemClock,
     scope = scope,
     places = listOf(
-        BonusPlace(FoodApp.ID, "Еда", Glyph.Cutlery, "до 10% с заказа у ресторанов-партнёров", "до 20–50% заказа"),
-        BonusPlace(FlowersApp.ID, "Цветы", Glyph.Flower, "5–10% с букета", "до 20–30% букета"),
-        BonusPlace(VisarunApp.ID, "Визараны", Glyph.Bus, "+150–300 за поездку, 5% за e-visa", "до 20–30% туров в донгах"),
-        BonusPlace(AdsApp.ID, "Объявления", Glyph.Tag, "+50–100 за обращение к бизнесам со значком", "пока нет — частные объявления"),
-        BonusPlace(ExchangeApp.ID, "Обмен валют", Glyph.Swap, "+50–100 за обмен у пунктов-партнёров", "пока нет"),
+        BonusPlace(FoodApp.ID, "Еда", Glyph.Cutlery, "до 10% с заказа у ресторанов-партнёров", "до 20–50% заказа", Tone.Chili),
+        BonusPlace(FlowersApp.ID, "Цветы", Glyph.Flower, "5–10% с букета", "до 20–30% букета", Tone.Rose),
+        BonusPlace(VisarunApp.ID, "Визараны", Glyph.Bus, "+150–300 за поездку, 5% за e-visa", "до 20–30% туров в донгах", Tone.Sky),
+        BonusPlace(AdsApp.ID, "Объявления", Glyph.Tag, "+50–100 за обращение к бизнесам со значком", "пока нет — частные объявления", Tone.Violet),
+        BonusPlace(ExchangeApp.ID, "Обмен валют", Glyph.Swap, "+50–100 за обмен у пунктов-партнёров", "пока нет", Tone.Jade),
     ),
     opener = open,
 )
@@ -131,4 +134,8 @@ private fun SuperizerBuilder.touch(debug: Boolean, bonus: CityBonus, openApp: (S
 }
 
 @Composable
-public fun TouchApp(superizer: Superizer): Unit = SuperizerShell(superizer)
+public fun TouchApp(superizer: Superizer) {
+    CompositionLocalProvider(LocalDrawerOnRight provides true) {
+        SuperizerShell(superizer)
+    }
+}

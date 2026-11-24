@@ -42,9 +42,10 @@
 Deep link: `touchvn://app/<id>` (`food`, `flowers`, `ads`, `visarun`, `exchange`):
 `./gradlew :composeApp:run --args="--link=touchvn://app/exchange"`, в вебе `?link=touchvn%3A%2F%2Fapp%2Ffood`.
 
-Superizer 0.8.2 без чекаута рядом берётся из `~/.m2` (`./gradlew publishToMavenLocal` в `../superizer`).
-Если рядом лежит чекаут `../superizer`, его исходники подставляются вместо пакета (композитная сборка, как
-в Unitool; так собирает CI). `SUPERIZER_FROM_MAVEN=1` — взять Superizer из `~/.m2`, даже когда чекаут есть.
+Superizer 0.10.0 берётся из соседнего чекаута `../superizer`, как в CI. Gradle применяет
+`gradle/patches/superizer-drawer-side.patch` к исходникам библиотеки, чтобы Touch VN мог открыть меню справа.
+Для сборки из `~/.m2` сначала примените тот же патч в чекауте Superizer и выполните там
+`./gradlew publishToMavenLocal`. `SUPERIZER_FROM_MAVEN=1` выбирает этот пакет при наличии соседнего чекаута.
 
 ## iPhone
 
@@ -105,6 +106,23 @@ Compose рисует в canvas, поэтому хост включает веб-
 
 Браузер берётся системный (`/usr/bin/chromium` или `CHROME_BIN`) с программным WebGL (SwiftShader), так что
 GPU и скачивание браузеров не нужны.
+
+## Дизайн
+
+Интерфейс нарисован на `ui-kit` Superizer 0.10.0 (shadcn/ui для Compose, иконки Lucide) и на своей
+дизайн-системе портала в `:kit` (`vn.touch.kit`): светлая и тёмная тема берутся из настройки «Оформление»
+хоста, в приложениях нет ни одного hex-цвета.
+
+| | |
+|---|---|
+| `Theme.kt` | `Touch.colors` (серый холст и белые карточки, золото бонусов), `Touch.type` (шкала от `display` до `micro`), `Touch.accent` — цвет сервиса; `PortalTheme(tone)` перекрашивает им `primary` kit-а |
+| Тона | `Lagoon` — бренд (море Нячанга): Home, бонусы; `Chili` — Еда, `Rose` — Цветы, `Violet` — Объявления, `Sky` — Визараны, `Jade` — Обмен валют |
+| `Widgets.kt` | `ServiceHeader` (градиентная шапка с поиском на краю), карточки `ListRow` / `FeatureCard`, `CategoryRow`, `BarButton`, `Stepper`, `DoneState`… |
+| `BonusWidgets.kt` | кошелёк городских бонусов (`WalletCard`), монета `CoinMark`, бонусные строки оформления |
+| `Glyphs.kt` | `Glyph` — иконки Lucide по смыслу, плюс сплошные монета и звезда |
+
+Скриншоты (светлые, часть — тёмные): `./gradlew :composeApp:desktopTest --tests '*Screenshots*'` →
+`composeApp/build/screenshots/`; `SHOTS=<regex>` — только нужные, `SHOTS_DARK=1` — все кадры и в тёмной теме.
 
 ## Устройство
 
