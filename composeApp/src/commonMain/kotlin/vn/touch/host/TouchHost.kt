@@ -1,6 +1,7 @@
 package vn.touch.host
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import cx.m42.superizer.HostScreen
 import cx.m42.superizer.LanguageOption
 import cx.m42.superizer.Superizer
@@ -12,6 +13,7 @@ import cx.m42.superizer.host.SystemClock
 import cx.m42.superizer.host.platform.currentPlatform
 import cx.m42.superizer.host.storage.PrefsStorageService
 import cx.m42.superizer.runtime.HostInfo
+import cx.m42.superizer.ui.components.LocalDrawerOnRight
 import cx.m42.superizer.ui.shell.SuperizerShell
 import kotlinx.coroutines.CoroutineScope
 import vn.touch.apps.ads.AdsApp
@@ -132,4 +134,8 @@ private fun SuperizerBuilder.touch(debug: Boolean, bonus: CityBonus, openApp: (S
 }
 
 @Composable
-public fun TouchApp(superizer: Superizer): Unit = SuperizerShell(superizer)
+public fun TouchApp(superizer: Superizer) {
+    CompositionLocalProvider(LocalDrawerOnRight provides true) {
+        SuperizerShell(superizer)
+    }
+}

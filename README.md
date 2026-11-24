@@ -42,9 +42,10 @@
 Deep link: `touchvn://app/<id>` (`food`, `flowers`, `ads`, `visarun`, `exchange`):
 `./gradlew :composeApp:run --args="--link=touchvn://app/exchange"`, в вебе `?link=touchvn%3A%2F%2Fapp%2Ffood`.
 
-Superizer 0.10.0 без чекаута рядом берётся из `~/.m2` (`./gradlew publishToMavenLocal` в `../superizer`).
-Если рядом лежит чекаут `../superizer`, его исходники подставляются вместо пакета (композитная сборка, как
-в Unitool; так собирает CI). `SUPERIZER_FROM_MAVEN=1` — взять Superizer из `~/.m2`, даже когда чекаут есть.
+Superizer 0.10.0 берётся из соседнего чекаута `../superizer`, как в CI. Gradle применяет
+`gradle/patches/superizer-drawer-side.patch` к исходникам библиотеки, чтобы Touch VN мог открыть меню справа.
+Для сборки из `~/.m2` сначала примените тот же патч в чекауте Superizer и выполните там
+`./gradlew publishToMavenLocal`. `SUPERIZER_FROM_MAVEN=1` выбирает этот пакет при наличии соседнего чекаута.
 
 ## iPhone
 

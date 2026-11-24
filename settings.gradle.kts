@@ -22,6 +22,18 @@ pluginManagement {
  */
 val superizerDir = file("../superizer")
 if (superizerDir.exists() && System.getenv("SUPERIZER_FROM_MAVEN") != "1") {
+    val drawerPatch = file("gradle/patches/superizer-drawer-side.patch")
+    fun applyDrawerPatch(vararg options: String): Int = providers.exec {
+        workingDir(superizerDir)
+        commandLine(listOf("git", "apply") + options + drawerPatch.absolutePath)
+        isIgnoreExitValue = true
+    }.result.get().exitValue
+
+    if (applyDrawerPatch("--reverse", "--check") != 0 && applyDrawerPatch() != 0) {
+        check(applyDrawerPatch("--reverse", "--check") == 0) {
+            "Cannot apply the Touch VN drawer patch to $superizerDir. Use the Superizer revision pinned in ios.yml."
+        }
+    }
     includeBuild(superizerDir)
 }
 

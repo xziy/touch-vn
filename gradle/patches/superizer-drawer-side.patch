@@ -1,0 +1,208 @@
+--- a/ui/src/commonMain/kotlin/cx/m42/superizer/ui/components/AppScaffold.kt
++++ b/ui/src/commonMain/kotlin/cx/m42/superizer/ui/components/AppScaffold.kt
+@@ -21,7 +21,7 @@
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
+-import androidx.compose.foundation.layout.offset
++import androidx.compose.foundation.layout.absoluteOffset
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.safeDrawing
+ import androidx.compose.foundation.layout.width
+@@ -37,6 +37,8 @@
+ import androidx.compose.runtime.remember
+ import androidx.compose.runtime.rememberCoroutineScope
+ import androidx.compose.runtime.setValue
++import androidx.compose.runtime.staticCompositionLocalOf
++import androidx.compose.ui.AbsoluteAlignment
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.clip
+@@ -82,7 +84,11 @@
+     val danger: Boolean = false,
+ )
+
+-/** How far in from the left edge a drag may start while the drawer is closed. */
++/** Opens the drawer from the right for hosts that choose a right-hand menu. */
++public val LocalDrawerOnRight: androidx.compose.runtime.ProvidableCompositionLocal<Boolean> =
++    staticCompositionLocalOf { false }
++
++/** How far in from the drawer edge a drag may start while the drawer is closed. */
+ private val EdgeSwipeWidth = 24.dp
+
+ /**
+@@ -204,7 +210,8 @@
+     val widthPx = with(LocalDensity.current) { DrawerWidth.toPx() }
+     // Seeded at construction so the width is right on the first frame — a burger tap that lands
+     // before any effect has run must still animate the full distance.
+-    val state = remember(scope) { DrawerState(scope, widthPx, onHaptic) }
++    val onRight = LocalDrawerOnRight.current
++    val state = remember(scope, onRight) { DrawerState(scope, widthPx, onHaptic, onRight) }
+     // Only a later *change* is an effect: writing state straight from composition would mutate a
+     // snapshot that may yet be discarded.
+     SideEffect { state.onWidthChanged(widthPx) }
+@@ -223,7 +230,12 @@
+     private val scope: kotlinx.coroutines.CoroutineScope,
+     initialWidth: Float,
+     private val onHaptic: () -> Unit,
++    val onRight: Boolean,
+ ) {
++    private val direction = if (onRight) -1f else 1f
++    val translationX: Float get() = direction * offsetPx
++    val alignment: Alignment = if (onRight) AbsoluteAlignment.CenterRight else Alignment.CenterStart
++
+     /**
+      * Plain state, not an `Animatable`: a drag has to write the new position on the very frame the
+      * pointer event arrives, and `Animatable.snapTo` is suspending.
+@@ -282,14 +294,15 @@
+
+     fun drag(delta: Float) {
+         if (width <= 0f) return
+-        offsetPx = (offsetPx + delta).coerceIn(0f, width)
++        offsetPx = (offsetPx + direction * delta).coerceIn(0f, width)
+     }
+
+     /** A decisive flick wins outright; otherwise the panel settles to whichever end it is nearer. */
+     fun settle(velocity: Float) {
++        val openingVelocity = direction * velocity
+         val target = when {
+-            velocity > FlingVelocity -> width
+-            velocity < -FlingVelocity -> 0f
++            openingVelocity > FlingVelocity -> width
++            openingVelocity < -FlingVelocity -> 0f
+             progress > 0.5f -> width
+             else -> 0f
+         }
+@@ -304,12 +317,12 @@
+ }
+
+ /**
+- * The frame every host screen and every app sits in: a fixed top bar with a burger on the left, and
++ * The frame every host screen and every app sits in: a fixed top bar with a menu button, and
+  * the content below it. Navigation lives in the drawer the burger opens, so no screen — and no app
+  * — spends its header on it (§14).
+  *
+  * The drawer does not slide over the screen; it lies *underneath* it. Opening pushes the whole
+- * screen right and scales it down to reveal the menu already sitting there, so the two feel like
++ * screen away from the drawer and scales it down to reveal the menu already sitting there, so the two feel like
+  * one stack of cards rather than a panel flying in.
+  *
+  * @param onSwipeBack what a swipe from the right edge does; null, the default, leaves the edge alone.
+@@ -367,7 +380,9 @@
+
+         ContentSheet(drawer = drawer, swipe = swipe, recording = recording, fullscreen = fullscreen) {
+             Column(modifier = Modifier.fillMaxSize()) {
+-                if (!fullscreen) TopBar(title = title, subtitle = subtitle, onBack = onBack, onOpenMenu = { drawer.open() })
++                if (!fullscreen) {
++                    TopBar(title, subtitle, onBack, menuOnRight = drawer.onRight, onOpenMenu = { drawer.open() })
++                }
+                 // weight, not fillMaxSize: the content takes the height the bar leaves, which keeps
+                 // a scrolling list from running under it.
+                 Box(modifier = Modifier.fillMaxWidth().weight(1f)) { content() }
+@@ -376,7 +391,10 @@
+
+         // Last, so it sits above the card it drives — and outside it, so the card's scale cannot
+         // distort the finger deltas.
+-        if (!fullscreen) DrawerGestureSurface(drawer = drawer)
++        // A right-edge back gesture takes priority when the current screen supports it.
++        if (!fullscreen && (drawer.progress > 0f || !drawer.onRight || onSwipeBack == null)) {
++            DrawerGestureSurface(drawer = drawer)
++        }
+     }
+ }
+
+@@ -408,13 +426,14 @@
+             .graphicsLayer {
+                 val swiped = if (size.width > 0f) (-swipe.offsetPx / size.width).coerceIn(0f, 1f) else 0f
+                 val p = maxOf(drawer.progress, swiped)
+-                translationX = drawer.offsetPx + swipe.offsetPx
++                translationX = drawer.translationX + swipe.offsetPx
+                 // Shrink towards the edge the finger pulls from, so the card pivots around that point;
+                 // scaling about the centre would make it drift away from the touch.
+                 val scale = 1f - (1f - PushedScale) * p
+                 scaleX = scale
+                 scaleY = scale
+-                transformOrigin = TransformOrigin(if (swiped > 0f) 1f else 0f, 0.5f)
++                val pivotX = if (swiped > 0f || drawer.onRight) 1f else 0f
++                transformOrigin = TransformOrigin(pivotX, 0.5f)
+                 // Corners round off only as the card lifts: a full-screen sheet with rounded
+                 // corners would show slivers of backdrop at rest.
+                 shape = RoundedCornerShape(PushedCorner * p)
+@@ -447,7 +466,7 @@
+ }
+
+ /**
+- * The invisible surface that owns every drawer gesture: a strip down the left edge while closed,
++ * The invisible surface that owns every drawer gesture: a strip down the drawer edge while closed,
+  * the whole screen once open.
+  *
+  * Deliberately a sibling of the card rather than a child. `draggable` reports deltas in its own
+@@ -459,10 +478,10 @@
+     val open = drawer.progress > 0f
+     Box(
+         modifier = Modifier
+-            .align(Alignment.CenterStart)
++            .align(drawer.alignment)
+             .fillMaxHeight()
+-            // Tracks the card, so the strip of menu uncovered to its left keeps its own taps.
+-            .offset { IntOffset(drawer.offsetPx.roundToInt(), 0) }
++            // Tracks the card, leaving taps in the revealed menu to its own rows.
++            .absoluteOffset { IntOffset(drawer.translationX.roundToInt(), 0) }
+             .then(if (open) Modifier.fillMaxWidth(PushedScale) else Modifier.width(EdgeSwipeWidth))
+             .draggable(
+                 orientation = Orientation.Horizontal,
+@@ -487,8 +506,22 @@
+ }
+
+ @Composable
+-private fun TopBar(title: String, subtitle: String?, onBack: (() -> Unit)?, onOpenMenu: () -> Unit) {
++private fun TopBar(
++    title: String,
++    subtitle: String?,
++    onBack: (() -> Unit)?,
++    menuOnRight: Boolean,
++    onOpenMenu: () -> Unit,
++) {
+     val tokens = AppTheme
++    val menuButton = @Composable {
++        IconButton(Lucide.Menu, contentDescription = hostStrings.openMenu, onClick = onOpenMenu)
++    }
++    val backButton = @Composable {
++        if (onBack != null) {
++            IconButton(Lucide.ChevronLeft, contentDescription = hostStrings.backAction, onClick = onBack)
++        }
++    }
+     Column {
+         Row(
+             modifier = Modifier
+@@ -497,7 +530,7 @@
+                 .padding(horizontal = 12.dp, vertical = 8.dp),
+             verticalAlignment = Alignment.CenterVertically,
+         ) {
+-            IconButton(Lucide.Menu, contentDescription = hostStrings.openMenu, onClick = onOpenMenu)
++            if (menuOnRight) backButton() else menuButton()
+
+             Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                 Text(
+@@ -518,11 +551,7 @@
+                 }
+             }
+
+-            // Back is the screen's own affordance, not the menu's, so it stays on the bar — but
+-            // only where there is somewhere to go back to.
+-            if (onBack != null) {
+-                IconButton(Lucide.ChevronLeft, contentDescription = hostStrings.backAction, onClick = onBack)
+-            }
++            if (menuOnRight) menuButton() else backButton()
+         }
+         Separator()
+     }
+@@ -547,7 +576,7 @@
+
+     Column(
+         modifier = Modifier
+-            .align(Alignment.CenterStart)
++            .align(drawer.alignment)
+             .fillMaxHeight()
+             // Only ever as wide as the screen travels, so no entry can hide under the card.
+             .width(DrawerWidth)
